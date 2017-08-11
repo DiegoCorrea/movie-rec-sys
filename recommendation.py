@@ -4,7 +4,7 @@ from euclidean import euclideanDistance
 
 # A partir de um usuario base
 # Pega o valor da similaridade desse usuario com todos os outros
-def getSimilarity(evaluationTable, userBase, limit=30):
+def getSimilarity(evaluationTable, userBase, limit=50):
     similarity = [(euclideanDistance(evaluationTable, userBase, userCompare), userCompare)
                     for userCompare in evaluationTable if userCompare != userBase]
 
@@ -13,7 +13,7 @@ def getSimilarity(evaluationTable, userBase, limit=30):
 
     return similarity[0:limit]
 
-def getUserRecommendations(evaluationTable, userBase, limit=30):
+def getUserRecommendations(evaluationTable, userBase, limit=50):
     totais = {}
     similaritySum = {}
 
@@ -37,23 +37,6 @@ def getUserRecommendations(evaluationTable, userBase, limit=30):
 
     return rankings[0:limit]
 
-def loadBase():
-    fileDir = os.path.dirname(os.path.realpath('__file__'))
-    path = os.path.join(fileDir, 'model/ml-100k')
-
-    movies = {}
-    for line in open(path + '/u.item'):
-        (id, title) = line.split('|')[0:2]
-        movies[id] = title
-
-    userBase = {}
-    for line in open(path + '/u.data'):
-        (user, idMovie, score, time) = line.split('\t')
-        userBase.setdefault(user, {})
-        userBase[user][movies[idMovie]] = float(score)
-
-    return userBase
-
 def makeSimilarityTable(evaluationTable):
     similarityTable = {}
 
@@ -63,7 +46,7 @@ def makeSimilarityTable(evaluationTable):
 
     return similarityTable
 
-def getItemRecommendations(evaluationTable, itensSimilarity, userBase):
+def getItemRecommendations(evaluationTable, itensSimilarity, userBase, limit=50):
     userItens = evaluationTable[userBase]
     scores = {}
     totalSimilarity = {}
@@ -81,4 +64,31 @@ def getItemRecommendations(evaluationTable, itensSimilarity, userBase):
     rankings.sort()
     rankings.reverse()
 
-    return rankings
+    return rankings[0:limit]
+
+def loadUserBase():
+    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    path = os.path.join(fileDir, 'model/ml-100k')
+
+    itens = {}
+    for line in open(path + '/u.item'):
+        (id, title) = line.split('|')[0:2]
+        itens[id] = title
+
+    userBase = {}
+    for line in open(path + '/u.data'):
+        (user, idItem, score, time) = line.split('\t')
+        userBase.setdefault(user, {})
+        userBase[user][itens[idItem]] = float(score)
+
+    return userBase
+
+def makeItemEvaluationBase(evaluationTable):
+    evaluationTableTransposed = {}
+
+    for user in evaluationTable:
+        for item in evaluationTable[user]:
+            evaluationTableTransposed.setdefault(item, {})
+            evaluationTableTransposed[item].setdefault(user, evaluationTable[user][item])
+
+    return evaluationTableTransposed
